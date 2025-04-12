@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const SLIPPI_API_URL = process.env.SLIPPI_API_URL;
-const keys = require('./slippisheetcredentials.json');
+const keys = require('./credentials.json');
 const SHEET_NAME = 'Season 2';
 const payload = require('./payload.json');
 
