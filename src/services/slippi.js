@@ -56,7 +56,6 @@ class SlippiService {
       
       await logInfo('Fetching data from Slippi API...');
       
-      // Create a fresh copy of the payload
       const payload = JSON.parse(JSON.stringify(this.payloadTemplate));
       payload.variables.cc = code;
       payload.variables.uid = code;

@@ -50,7 +50,6 @@ class DolphinConnector {
   setupGameHandlers() {
     // Game start handler
     this.startSubscription = this.realtime.game.start$.subscribe(async ({ players }) => {
-      // Log game start with header but no footer
       await logGameEvent('🎮 GAME STARTED via Dolphin connection', true, true, true, false);
       
       // Log player information without separators or timestamps
@@ -67,7 +66,6 @@ class DolphinConnector {
       // Add footer
       await logGameEvent('', true, false, false, true);
       
-      // Call external handler if provided
       if (this.onGameStart) {
         this.onGameStart(players);
       }
@@ -95,7 +93,6 @@ class DolphinConnector {
       // Add footer
       await logGameEvent('', false, false, false, true);
       
-      // Call external handler if provided
       if (this.onGameEnd) {
         this.onGameEnd(data);
       }

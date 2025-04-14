@@ -57,7 +57,7 @@ class SlippiSheet {
         await sheetsService.debugAuth();
       } catch (err) {
         await logError(`Google Sheets connection test failed: ${err.message}`);
-        // Continue anyway - we'll handle errors during the actual fetches
+        // Continue anyway. Error handling on fetch will give more information.
       }
       // Initial data fetch
       try {
@@ -74,15 +74,12 @@ class SlippiSheet {
 
   async handleGameStart(filePath) {
     try {
-      // Log game start
       if (filePath) {
         await logInfo(`Game started: ${path.basename(filePath)}`);
       } else {
         await logInfo('Game started via Dolphin connection');
       }
 
-      // You can add more logic here if needed
-      // For example, you might want to track the start time or display player information
     } catch (error) {
       await logError(`Error handling game start: ${error.message}`);
     }
@@ -123,9 +120,6 @@ class SlippiSheet {
   }
 }
 
-/**
- * Application entry point
- */
 async function main() {
   try {
     const app = new SlippiSheet();

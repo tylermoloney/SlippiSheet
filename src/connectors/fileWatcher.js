@@ -144,34 +144,11 @@ class FileWatcher {
       
       this.isWatching = true;
       await logSuccess(`File watcher started successfully`);
-      
-      // Set up monthly folder check interval
-      setInterval(() => this.checkCurrentMonthFolder(), 60 * 60 * 1000); // Check every hour
-      
+            
       return true;
     } catch (error) {
       await logError(`Error starting file watcher: ${error.message}`);
       return false;
-    }
-  }
-
-  /**
-   * Check if we need to change to a new month's folder
-   */
-  async checkCurrentMonthFolder() {
-    const currentMonthFolder = this.getCurrentMonthFolder();
-    
-    if (this.watcher && this.watcher.getWatched()[currentMonthFolder] === undefined) {
-      await logInfo(`Updating watcher to the current month folder: ${currentMonthFolder}`);
-      
-      // Create folder if it doesn't exist
-      if (!fs.existsSync(currentMonthFolder)) {
-        fs.mkdirSync(currentMonthFolder, { recursive: true });
-      }
-      
-      // Add new paths to both watchers
-      this.watcher.add(currentMonthFolder);
-      this.startWatcher.add(currentMonthFolder);
     }
   }
 

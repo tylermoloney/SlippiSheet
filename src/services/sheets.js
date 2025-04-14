@@ -22,17 +22,17 @@ class SheetsService {
   constructor() {
     this.spreadsheetId = config.get('SPREADSHEET_ID');
     this.sheetName = config.get('SHEET_NAME');
-    
+
     try {
       // Ensure private key is properly formatted
       const privateKey = process.env.GOOGLE_PRIVATE_KEY
         ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
         : null;
-        
+
       if (!process.env.GOOGLE_CLIENT_EMAIL || !privateKey) {
         throw new Error('Missing Google API credentials. Check your .env file.');
       }
-      
+
       // Set up authentication
       this.client = new google.auth.JWT(
         process.env.GOOGLE_CLIENT_EMAIL,
@@ -40,11 +40,11 @@ class SheetsService {
         privateKey,
         ['https://www.googleapis.com/auth/spreadsheets']
       );
-      
+
       // Create sheets instance
       this.sheets = google.sheets({ version: 'v4', auth: this.client });
-      
-      // Verify auth by getting spreadsheet metadata (optional but helpful)
+
+      // Verify auth
       this.client.authorize((err) => {
         if (err) {
           console.error('Authentication error:', err.message);
@@ -67,12 +67,12 @@ class SheetsService {
     try {
       // Log the spreadsheet ID and sheet name for debugging
       await logInfo(`Using spreadsheet: ${this.spreadsheetId}, sheet: ${this.sheetName}`);
-      
+
       // Validate inputs
       if (!rating && rating !== 0) {
         throw new Error('Rating value is required');
       }
-      
+
       // Get current values
       const getRowsResponse = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
@@ -80,29 +80,27 @@ class SheetsService {
       }).catch(err => {
         throw new Error(`Failed to get spreadsheet data: ${err.message}`);
       });
-      
+
       const ratingValues = getRowsResponse.data.values || [];
       const numRows = ratingValues.length;
       const nextRow = numRows + 1;
-      
+
       // Calculate rating change
       const previousRating = numRows > 0 ? parseFloat(ratingValues[numRows - 1][0]) : 0;
       const difference = rating - previousRating;
-      
+
       await logInfo(`Rating change: ${parseFloat(difference).toFixed(1)}`);
-      
+
       if (difference === 0) {
         await logInfo('No change in rating. Data not appended to Google Sheet');
         return false;
       }
-      
-      // Prepare data for append
+
       const currentDate = new Date().toLocaleDateString();
       const range = `${this.sheetName}!A${nextRow}:C${nextRow}`;
-      
+
       await logInfo(`Appending to range: ${range}`);
-      
-      // Append to sheet with safer error handling
+
       try {
         const request = {
           spreadsheetId: this.spreadsheetId,
@@ -112,25 +110,23 @@ class SheetsService {
             values: [[currentDate, rating, difference]],
           },
         };
-        
+
         await this.sheets.spreadsheets.values.append(request);
-        
+
         const message = `Data appended successfully. Rating change: ${parseFloat(difference).toFixed(1)} New rating: ${parseFloat(rating).toFixed(1)}`;
         if (difference > 0) {
           await logSuccess(message);
         } else {
-          // Use warning for rating decreases instead of error
           await logWarning(message);
         }
-        
+
         return true;
       } catch (appendError) {
         throw new Error(`Failed to append data: ${appendError.message}`);
       }
     } catch (error) {
       await logError(`Error appending data to Google Sheet: ${error.message}`);
-      
-      // Add helpful troubleshooting advice
+
       if (error.message.includes('permission')) {
         await logInfo('Hint: Make sure your service account has permission to edit the spreadsheet');
       } else if (error.message.includes('not found')) {
@@ -140,7 +136,7 @@ class SheetsService {
       } else if (error.message.includes('limit')) {
         await logInfo('Hint: You might be hitting Google API rate limits. Consider adding delay between requests.');
       }
-      
+
       throw error;
     }
   }

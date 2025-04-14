@@ -109,7 +109,7 @@ class ConfigManager {
         }
       });
       
-      // Prepare user config object (camelCase keys for better JSON)
+      // Prepare user config object
       const userConfig = {
         connectCode: this.config.CONNECT_CODE,
         replayDir: this.config.REPLAY_DIR,
@@ -135,6 +135,5 @@ class ConfigManager {
   }
 }
 
-// Create a singleton instance
 const configManager = new ConfigManager();
 module.exports = configManager;
