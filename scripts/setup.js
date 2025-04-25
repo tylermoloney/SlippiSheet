@@ -59,12 +59,12 @@ async function setupSlippiSheet() {
     
     // Save configuration
     const updates = {
-      connectCode: connectCode,
-      replayDir: replayDir,
-      spreadsheetId: spreadsheetId,
-      sheetName: sheetName
+      CONNECT_CODE: connectCode,  
+      REPLAY_DIR: replayDir,      
+      SPREADSHEET_ID: spreadsheetId, 
+      SHEET_NAME: sheetName
     };
-    
+
     if (config.saveConfig(updates)) {
       await logSuccess("\nConfiguration saved successfully!");
       await logInfo("\nNext steps:");
@@ -83,5 +83,4 @@ async function setupSlippiSheet() {
   }
 }
 
-// Run setup
 setupSlippiSheet();

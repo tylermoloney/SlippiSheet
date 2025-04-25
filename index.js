@@ -50,15 +50,6 @@ class SlippiSheet {
 
       await logSuccess('SlippiSheet is running. Press Ctrl+C to exit.');
 
-
-      // Test Google Sheets connection
-      try {
-        await logInfo('Testing Google Sheets connection...');
-        await sheetsService.debugAuth();
-      } catch (err) {
-        await logError(`Google Sheets connection test failed: ${err.message}`);
-        // Continue anyway. Error handling on fetch will give more information.
-      }
       // Initial data fetch
       try {
         await this.fetchAndAppendRating();

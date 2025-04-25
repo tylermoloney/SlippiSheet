@@ -65,8 +65,6 @@ class SheetsService {
    */
   async appendRating(rating) {
     try {
-      // Log the spreadsheet ID and sheet name for debugging
-      await logInfo(`Using spreadsheet: ${this.spreadsheetId}, sheet: ${this.sheetName}`);
 
       // Validate inputs
       if (!rating && rating !== 0) {

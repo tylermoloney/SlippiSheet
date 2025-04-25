@@ -12,8 +12,8 @@ class ConfigManager {
       POST_GAME_DELAY: 5000, // 5 seconds
       FILE_CHECK_INTERVAL: 5000, // 5 seconds
       CONNECT_CODE: null, // Will be set by user
-      SPREADSHEET_ID: process.env.SPREADSHEET_ID,
-      SLIPPI_API_URL: process.env.SLIPPI_API_URL || 'https://gql-gateway-2-dot-slippi.uc.r.appspot.com/graphql',
+      SPREADSHEET_ID: '', // Will be set by user
+      SLIPPI_API_URL: 'https://gql-gateway-2-dot-slippi.uc.r.appspot.com/graphql',
       SHEET_NAME: process.env.SHEET_NAME || 'Sheet1'
     };
     
@@ -101,13 +101,20 @@ class ConfigManager {
    */
   saveConfig(updates = {}) {
     try {
+
       // Update config with new values
       Object.entries(updates).forEach(([key, value]) => {
-        const configKey = key.toUpperCase();
-        if (this.config[configKey] !== undefined) {
-          this.config[configKey] = value;
+        if (this.config[key] !== undefined) {
+          // Skip null values to avoid overwriting existing valid values
+          if (value !== null) {
+            this.config[key] = value;
+          } else {
+            console.log(`Skipping null value for ${key}`);
+          }
+        } else {
+          console.log(`Unknown config key: ${key}`);
         }
-      });
+      });  
       
       // Prepare user config object
       const userConfig = {
@@ -117,19 +124,25 @@ class ConfigManager {
         spreadsheetId: this.config.SPREADSHEET_ID,
         sheetName: this.config.SHEET_NAME
       };
+            
+      // Ensure userConfigPath is defined
+      if (!this.userConfigPath) {
+        // Define the path if it's not set
+        this.userConfigPath = path.join(__dirname, '..', '..', 'resources', 'user-config.json');
+      }
       
-      // Ensure resources directory exists
-      const resourcesDir = path.join(process.cwd(), 'resources');
+      // Create resources directory if it doesn't exist
+      const resourcesDir = path.dirname(this.userConfigPath);
       if (!fs.existsSync(resourcesDir)) {
         fs.mkdirSync(resourcesDir, { recursive: true });
       }
       
-      // Save to file
-      const configPath = path.join(process.cwd(), 'resources', 'user-config.json');
-      fs.writeFileSync(configPath, JSON.stringify(userConfig, null, 2), 'utf8');
+      // Write updated config to file
+      fs.writeFileSync(this.userConfigPath, JSON.stringify(userConfig, null, 2));
+      
       return true;
     } catch (error) {
-      console.error('Error saving user config:', error.message);
+      console.error('Error saving config:', error.message);
       return false;
     }
   }

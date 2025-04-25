@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlippiSheet Setup</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #218c74;
+      text-align: center;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .help-text {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 3px;
+    }
+    button {
+      background-color: #218c74;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      display: block;
+      margin: 20px auto;
+    }
+    button:hover {
+      background-color: #1e8066;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <h1>SlippiSheet Setup</h1>
+    <p>Configure your Slippi rating tracker</p>
+  </div>
+  
+  <div id="message" style="display: none;"></div>
+  
+  <form id="setupForm">
+    <div class="form-group">
+      <label for="connectCode">Slippi Connect Code:</label>
+      <input type="text" id="connectCode" name="connectCode" placeholder="e.g., ABCD#123" required>
+      <div class="help-text">Your Slippi connect code used for ranked matches</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="spreadsheetId">Google Spreadsheet ID:</label>
+      <input type="text" id="spreadsheetId" name="spreadsheetId" placeholder="Google Spreadsheet ID" required>
+      <div class="help-text">The ID from your Google Sheet URL. This is the part of the URL after /d/ and before /edit</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="sheetName">Sheet Name:</label>
+      <input type="text" id="sheetName" name="sheetName" placeholder="Sheet1">
+      <div class="help-text">The name of the tab in your spreadsheet</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="replayDir">Slippi Replay Directory:</label>
+      <input type="text" id="replayDir" name="replayDir" placeholder="Path to your Slippi replay files">
+      <div class="help-text">Leave blank to use the default location</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="dolphinPort">Dolphin Port:</label>
+      <input type="text" id="dolphinPort" name="dolphinPort" placeholder="51441">
+      <div class="help-text">Default: 51441 - Unless you have edited your dolphin.ini file this should be the same.</div>
+    </div>
+    
+    <button type="submit">Save Configuration</button>
+  </form>
+  
+  <script>
+    // Load existing config when page loads
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        
+        // Fill in form fields with current values
+        document.getElementById('connectCode').value = config.connectCode || '';
+        document.getElementById('spreadsheetId').value = config.spreadsheetId || '';
+        document.getElementById('sheetName').value = config.sheetName || 'Sheet1';
+        document.getElementById('replayDir').value = config.replayDir || '';
+        document.getElementById('dolphinPort').value = config.dolphinPort || '51441';
+      } catch (error) {
+        showMessage('Error loading configuration: ' + error.message, 'error');
+      }
+    });
+    
+    // Handle form submission
+    document.getElementById('setupForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        connectCode: document.getElementById('connectCode').value,
+        spreadsheetId: document.getElementById('spreadsheetId').value,
+        sheetName: document.getElementById('sheetName').value || 'Sheet1',
+        replayDir: document.getElementById('replayDir').value,
+        dolphinPort: document.getElementById('dolphinPort').value || '51441'
+      };
+      
+      try {
+        const response = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage('Configuration saved successfully! You can close this page and start SlippiSheet.', 'success');
+        } else {
+          showMessage('Error: ' + (result.error || 'Failed to save configuration'), 'error');
+        }
+      } catch (error) {
+        showMessage('Error saving configuration: ' + error.message, 'error');
+      }
+    });
+    
+    function showMessage(text, type) {
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = text;
+      messageEl.className = type;
+      messageEl.style.display = 'block';
+      
+      messageEl.scrollIntoView({ behavior: 'smooth' });
+    }
+    // WebSocket connection to detect tab closure
+    let socket;
+    let reconnectAttempts = 0;
+    
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      
+      socket = new WebSocket(wsUrl);
+      
+      socket.onopen = function() {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+      };
+      
+      socket.onclose = function() {
+        console.log('WebSocket disconnected');
+        
+        // Try to reconnect if page is still open
+        if (document.visibilityState === 'visible' && reconnectAttempts < 5) {
+          reconnectAttempts++;
+          setTimeout(connectWebSocket, 1000);
+        }
+      };
+      
+      socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'heartbeat') {
+          // Respond to heartbeat to keep connection alive
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'heartbeat-response' }));
+          }
+        }
+      };
+    }
+    
+    connectWebSocket();
+    
+    // Add a button to manually close the server
+    const form = document.getElementById('setupForm');
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = 'Save and Exit';
+    closeButton.style.backgroundColor = '#dc3545';
+    closeButton.style.marginTop = '10px';
+    
+    closeButton.addEventListener('click', async function() {
+      if (confirm('Are you sure you want to save and exit?')) {
+        // Save the form first
+        const formData = {
+          connectCode: document.getElementById('connectCode').value,
+          spreadsheetId: document.getElementById('spreadsheetId').value,
+          sheetName: document.getElementById('sheetName').value || 'Sheet1',
+          replayDir: document.getElementById('replayDir').value,
+          dolphinPort: document.getElementById('dolphinPort').value || '51441'
+        };
+        
+        try {
+          const saveResponse = await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          
+          const saveResult = await saveResponse.json();
+          
+          if (saveResult.success) {
+            await fetch('/api/shutdown', { method: 'POST' });
+            showMessage('Configuration saved successfully! This window will now close.', 'success');
+            setTimeout(() => window.close(), 2000);
+          } else {
+            showMessage('Error: ' + (saveResult.error || 'Failed to save configuration'), 'error');
+          }
+        } catch (error) {
+          showMessage('Error: ' + error.message, 'error');
+        }
+      }
+    });
+    
+    form.appendChild(closeButton);
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') {
+        // Try to reconnect when the page becomes visible again
+        if (socket.readyState !== WebSocket.OPEN) {
+          connectWebSocket();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

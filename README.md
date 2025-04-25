@@ -46,23 +46,39 @@ yarn install
 Create a .env file with the following variables:
 
 ```
-SPREADSHEET_ID=your_spreadsheet_id_here
-SLIPPI_API_URL=https://gql-gateway-2-dot-slippi.uc.r.appspot.com/graphql
 GOOGLE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n"
-SHEET_NAME=Sheet1
 ```
 
 - Make sure to share your Google Sheet with the service account email address
 
-### 4. Configure Slippi Connect Code
-Run the setup script and follow the prompts. You will need:
+### 4. Configuration Options
+During this setup you will need:
 - Your Slippi connect code (e.g. ABCD#123)
 - Google Spreadsheet ID
 - Sheet name
+- Replay Directory: (Optional) Path to your Slippi replays folder
+- Dolphin Port: (Optional) Port for Dolphin connection (default: 51441)
+
+SlippiSheet provides two ways to configure the application.
+
+### Browser-based setup (Recommended)
+
+Run the setup in your browser:
 
 ```bash
 yarn setup
+```
+This will open a browser window where you can:
+- Enter your Slippi Connect code
+- Provide your Google Spreadsheet ID
+- Configure the sheet name
+- Set optional replay path and Dolphin settings
+
+### Command-Line Setup
+If you prefer to configure via command line:
+```bash
+yarn cli-setup
 ```
 
 ### 5. Start the Application
